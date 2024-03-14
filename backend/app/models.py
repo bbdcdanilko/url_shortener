@@ -1,3 +1,4 @@
+from sqlalchemy import Column, String
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -45,6 +46,7 @@ class User(UserBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner")
+    urls: list["Url"] = Relationship(back_populates="owner")
 
 
 # Properties to return via API, id is always required
@@ -111,3 +113,40 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str
+
+
+class UrlBase(SQLModel):
+    title: str
+    original_url: str
+
+
+# Properties to receive on item creation
+class UrlCreate(UrlBase):
+    title: str | None = None
+    original_url: str
+
+
+# Properties to receive on item update
+class UrlUpdate(UrlBase):
+    title: str | None = None  # type: ignore
+
+
+class Url(UrlBase, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    title: str | None = None
+    original_url: str
+    shorted_url: str = Field(sa_column=Column("shorted_url", String, unique=True))
+    owner_id: int | None = Field(default=None, foreign_key="user.id", nullable=False)
+    owner: User | None = Relationship(back_populates="urls")
+
+
+class UrlOut(UrlBase):
+    id: int
+    owner_id: int
+    original_url: str
+    shorted_url: str
+
+
+class UrlsOut(SQLModel):
+    data: list[UrlOut]
+    count: int
